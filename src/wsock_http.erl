@@ -208,9 +208,9 @@ encode_message(StartlineExpr, StartlineFields, Headers) ->
     end, ["\r\n"], [SL | H]).
 
 build_start_line(StartlineExpr, StartlineFields) ->
-  lists:foldr(fun({Key, Value}, Acc) ->
-        re:replace(Acc, "{{" ++ atom_to_list(Key) ++ "}}", Value, [{return, list}])
-    end, StartlineExpr, StartlineFields).
+  lists:flatten(lists:foldr(fun({Key, Value}, Acc) ->
+        string:replace(Acc, "{{" ++ atom_to_list(Key) ++ "}}", Value)
+    end, StartlineExpr, StartlineFields)).
 
 -spec build_headers(list({HeaderName::string(), HeaderValue::string()})) -> list(string()).
 build_headers(Headers) ->
