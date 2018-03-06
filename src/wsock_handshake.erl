@@ -24,7 +24,6 @@
 -define(GUID, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").
 
 -define(INVALID_CLIENT_OPEN, invalid_handshake_opening).
--define(INVALID_SERVER_RESPONSE, invalid_server_response).
 
 -spec handle_open(Message::#http_message{}) -> {ok, #handshake{}} | {error, ?INVALID_CLIENT_OPEN}.
 handle_open(Message) ->
@@ -35,13 +34,13 @@ handle_open(Message) ->
       {error, ?INVALID_CLIENT_OPEN}
   end.
 
--spec handle_response(Response::#http_message{}, Handshake::#handshake{}) -> {ok, #handshake{}} | {error, ?INVALID_SERVER_RESPONSE}.
+-spec handle_response(Response::#http_message{}, Handshake::#handshake{}) -> {ok, #handshake{}} | {error, Response::http_message{}}.
 handle_response(Response, Handshake) ->
   case validate_handshake_response(Response, Handshake) of
     true ->
       {ok, #handshake{ type = handle_response, message = Response}};
     false ->
-      {error, ?INVALID_SERVER_RESPONSE}
+      {error, Response}
   end.
 
 -spec response(ClientWebsocketKey::string()) -> {ok, #handshake{}}.
