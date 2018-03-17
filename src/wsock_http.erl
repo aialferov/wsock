@@ -17,7 +17,7 @@
 -module(wsock_http).
 -include("wsock.hrl").
 
--export([build/3, get_start_line_value/2, get_header_value/2]).
+-export([build/3, build/4, get_start_line_value/2, get_header_value/2]).
 -export([decode/2, encode/1]).
 
 -define(CTRL, "\r\n").
@@ -35,14 +35,18 @@ decode(Data, Type) ->
           fragmented_http_message;
         {error, _} ->
           {error, malformed_request};
-        {ok, HeadersFields} ->
-          {ok, wsock_http:build(Type, StartlineFields, HeadersFields)}
+        {ok, {HeadersFields, Body}} ->
+          {ok, wsock_http:build(Type, StartlineFields, HeadersFields, Body)}
       end
   end.
 
 -spec build(Type::atom(), StartLine::list({atom(), string()}), Headers::list({string(), string()})) -> #http_message{}.
 build(Type, StartLine, Headers) ->
   #http_message{type = Type, start_line = StartLine, headers = Headers}.
+
+-spec build(Type::atom(), StartLine::list({atom(), string()}), Headers::list({string(), string()}), Body::binary()) -> #http_message{}.
+build(Type, StartLine, Headers, Body) ->
+  #http_message{type = Type, start_line = StartLine, headers = Headers, body = Body}.
 
 -spec encode(Message::#http_message{}) -> list(string()).
 encode(Message) ->
@@ -130,8 +134,8 @@ decode_http_message(Type, Chunk, Data) ->
       {ok, [{version, process_http_version(Version)}, {status, ensure_string(Status)}, {reason, ensure_string(Reason)}], Rest};
     {ok, {http_header, _, Field, _, Value}, Rest} when Chunk == header->
       {ok, {ensure_string(Field), ensure_string(Value)}, Rest};
-    {ok, http_eoh, _} when Chunk == header ->
-      ok;
+    {ok, http_eoh, Rest} when Chunk == header ->
+      {ok, Rest};
     _ ->
       {error, unexpected_http_message}
   end.
@@ -193,8 +197,8 @@ process_headers(Data, Acc) ->
   case decode_http_message(httph_bin, header, Data) of
     {ok, Header, Rest} ->
       process_headers(Rest, [Header | Acc]);
-    ok ->
-      {ok, Acc};
+    {ok, Body} ->
+      {ok, {Acc, Body}};
     Other ->
       Other
   end.

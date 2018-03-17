@@ -1,7 +1,8 @@
 -record(http_message,{
     type :: response | request,
     start_line :: list({atom(), string()}),
-    headers :: list({string(), string()})
+    headers :: list({string(), string()}),
+    body :: binary()
   }).
 
 -record(handshake, {
